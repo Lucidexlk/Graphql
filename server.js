@@ -7,7 +7,6 @@ const app = express();
 app.use(morgan("dev"));
 
 const grapqlHttp = require('express-graphql')
-const { buildSchema } = require('graphql')
 
 //define server running port
 let port = 4000;
@@ -15,8 +14,16 @@ let port = 4000;
 // import db
 const dbConfig = require('./app/config/db.config')
 
+// import graphql schema
+const graphQlSchema = require('./app/graphql/schema/schema')
+
+// import grapgql resolver
+const graphqlResolvers = require('./app/graphql/resolvers/resolver')
 // import routes
-const mainRoutes = require('./app/route/main.routes')
+const mainRoutes = require('./app/route/main.routes');
+
+
+
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -24,27 +31,12 @@ app.use(bodyParser.urlencoded({ extended: false }));
 
 
 app.use('/main', mainRoutes)
-
 app.use('/grapgql', grapqlHttp({
-    schema: buildSchema(`
-        type RootQuery{
-            events: [String!]!
-        }
-        type RootMutation {
-            createEvent(name: String) : String
-        }
-        schema {
-            query:RootQuery
-            mutation: RootMutation
-        }
-    `),
-    rootValue: {
+    schema: graphQlSchema,
+    rootValue: graphqlResolvers,
+    graphiql: true
 
-    }
-
-}))
-
-
+}));
 
 app.use((req, res, next) => {
     const error = new Error("Not found");

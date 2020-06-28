@@ -10,7 +10,7 @@ const bcrypt = require('bcryptjs')
 const events = async eventIds => {
     try {
         const events = await Event.find({ _id: { $in: eventIds } });
-        events.map(event => {
+   return   events.map(event => {
             return {
                 ...event._doc,
                 _id: event.id,
@@ -18,7 +18,6 @@ const events = async eventIds => {
                 creator: user.bind(this, event.creator)
             };
         });
-        return events;
     } catch (err) {
         throw err;
     }
@@ -40,10 +39,36 @@ const user = async userId => {
 }
 
 
-
+const singleEvent = async  eventId =>{
+    try {
+        
+        const event = await Event.findById(eventId)
+        return{
+            ...event._doc,
+            _id: event.id,
+            creator : user.bind(this, event.creator)
+        }
+    } catch (error) {
+        throw error
+    }
+}
 
 
 module.exports = {
+
+    getUsers : async () => {
+        try{
+            const allUsers = await User.find();
+            return allUsers.map(users => {
+                return {
+                    ...users._doc
+                }
+            })
+        }catch (err){
+            throw err;
+        }
+    },
+
     events: async () => {
         try {
             const events = await Event.find().populate('creator');
@@ -51,6 +76,7 @@ module.exports = {
                 return {
                     ...event._doc,
                     _id: event.id,
+
                     date: new Date(event._doc.date).toISOString(),
                     creator: user.bind(this, event._doc.creator)
                 };
@@ -61,15 +87,18 @@ module.exports = {
     },
 
 
-    booking: async () => {
+    bookings: async () => {
         try {
 
             const bookings = await Booking.find()
             return bookings.map(booking => {
                 return {
                     ...booking._doc,
-                    createdAt: new Date(booking.createdAt).toISOString(),
-                    updatedAt: new Date(booking.updatedAt).toISOString()
+                    _id: booking.id,
+                    user : user.bind(this, booking._doc.user),
+                    event : singleEvent.bind(this, booking._doc.event),
+                    createdAt: new Date(booking._doc.createdAt).toISOString(),
+                    updatedAt: new Date(booking._doc.updatedAt).toISOString()
 
                 }
             })
@@ -148,8 +177,25 @@ module.exports = {
         return {
             ...result._doc,
             _id: result.id,
-            createdAt: new Date(result.createdAt).toISOString(),
-            updatedAt: new Date(result.updatedAt).toISOString()
+
+            user : user.bind(this, booking._doc.user),
+            event : singleEvent.bind(this, booking._doc.event),
+            createdAt: new Date(result._doc.createdAt).toISOString(),
+            updatedAt: new Date(result._doc.updatedAt).toISOString()
+        }
+    },
+
+
+
+    cancleBooking : async args => {
+        try {
+            const booking = await  Booking.findById(args.bookingId).populate('event');
+            const event = {...booking.event._doc, creator: user.bind(this, booking.event._doc.creator)}
+         await  Booking.deleteOne({_id: args.bookingId})
+ 
+         return  event
+        } catch (error) {
+            throw error
         }
     }
 }

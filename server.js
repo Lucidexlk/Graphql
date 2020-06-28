@@ -23,13 +23,15 @@ const graphqlResolvers = require('./app/graphql/resolvers/resolver')
 const mainRoutes = require('./app/route/main.routes');
 
 
+// import middleware
 
+const isAuth = require('./app/middlewares/is-auth.middleware') 
 
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 
-
+app.use(isAuth)
 app.use('/main', mainRoutes)
 app.use('/grapgql', grapqlHttp({
     schema: graphQlSchema,
